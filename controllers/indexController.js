@@ -6,46 +6,70 @@ const index = (req, res) => {
 };
 
 const home = (req, res) => {
-  res.render("home", { title: "Home", user: req.session.username });
+  res.render("home", {
+    title: "Home",
+    user: req.session.username,
+  });
 };
 
 const loginPage = (req, res) => {
   if (req.session.userId) {
     return res.redirect("/home");
   }
-  res.render("login", { title: "Login", error: null });
+
+  res.render("login", {
+    title: "Login",
+    error: null,
+  });
 };
 
 const login = async (req, res, next) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [
-      username,
-    ]);
+    if (!email || !password) {
+      return res.render("login", {
+        title: "Login",
+        error: "Email dan password wajib diisi",
+      });
+    }
+
+    const [rows] = await db.query(
+      `
+      SELECT *
+      FROM users
+      WHERE email = ?
+      LIMIT 1
+      `,
+      [email]
+    );
 
     if (rows.length === 0) {
       return res.render("login", {
         title: "Login",
-        error: "Invalid username or password",
+        error: "Invalid email or password",
       });
     }
 
     const user = rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
+
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return res.render("login", {
         title: "Login",
-        error: "Invalid username or password",
+        error: "Invalid email or password",
       });
     }
 
-    // Set session
     req.session.userId = user.id;
-    req.session.username = user.username;
+    req.session.email = user.email;
+    req.session.username = user.name || user.email;
 
-    res.redirect("/home");
+    return res.redirect("/home");
   } catch (err) {
     next(err);
   }
@@ -56,6 +80,7 @@ const logout = (req, res, next) => {
     if (err) {
       return next(err);
     }
+
     res.redirect("/login");
   });
 };
@@ -65,5 +90,5 @@ module.exports = {
   home,
   loginPage,
   login,
-  logout
+  logout,
 };
