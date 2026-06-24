@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Kelola Panitia - Facultyware</title>
+
+    <link rel="stylesheet" href="/assets/styles.css" />
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <script>
+      (() => {
+        try {
+          if (
+            localStorage.getItem("themeMode") === "dark" ||
+            (!localStorage.getItem("themeMode") &&
+              matchMedia("(prefers-color-scheme: dark)").matches)
+          ) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (_) {}
+      })();
+    </script>
+
+    <script>
+      (function () {
+        try {
+          const storedTheme = localStorage.getItem("themeVariant");
+          if (storedTheme) {
+            document.documentElement.classList.add(`theme-${storedTheme}`);
+          }
+        } catch (event) {
+          console.error("Could not apply theme variant", event);
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="bg-background text-foreground antialiased p-6 md:p-10">
+    <div class="max-w-5xl mx-auto space-y-6">
+      <header class="flex justify-between items-center pb-6 border-b border-border">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-xl tracking-tight">Facultyware</span>
+          <span class="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Admin Event</span>
+        </div>
+
+        <nav class="flex gap-4 items-center">
+          <a href="/home" class="text-sm font-medium hover:underline">Dashboard</a>
+          <a href="/admin/events" class="text-sm font-medium hover:underline">Manajemen Event</a>
+          <a href="/logout" class="text-sm font-medium hover:underline">Logout</a>
+        </nav>
+      </header>
+
+      <main class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Kelola Panitia</h1>
+            <p class="text-muted-foreground text-sm mt-2">
+              Event: <span class="font-semibold text-foreground"><%= event.title %></span>
+            </p>
+          </div>
+
+          <a href="/admin/events" class="text-sm font-medium hover:underline">&larr; Kembali ke Daftar Event</a>
+        </div>
+
+        <% if (typeof success !== "undefined" && success) { %>
+          <div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <%= success %>
+          </div>
+        <% } %>
+
+        <% if (typeof error !== "undefined" && error) { %>
+          <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <%= error %>
+          </div>
+        <% } %>
+
+        <!-- FITUR 4: Tambah anggota panitia -->
+        <div data-slot="card" class="rounded-xl border border-border bg-card text-card-foreground shadow-md">
+          <div class="p-6 border-b border-border">
+            <h2 class="text-xl font-bold tracking-tight">Tambah Anggota Panitia</h2>
+            <p class="text-sm text-muted-foreground mt-1">
+              Ketik nama panitia dan tentukan perannya pada event ini.
+            </p>
+          </div>
+
+          <form action="/admin/events/<%= event.id %>/panitia/add" method="POST" class="p-6">
+            <div class="flex flex-col md:flex-row gap-3">
+              <input
+                type="text"
+                name="name"
+                placeholder="Nama Panitia"
+                required
+                class="flex-1 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+              />
+
+              <input
+                type="text"
+                name="role"
+                placeholder="Peran (cth: Panitia Acara, Panitia Konsumsi)"
+                required
+                class="flex-1 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+              />
+
+              <label class="flex items-center gap-2 text-sm whitespace-nowrap px-2">
+                <input type="checkbox" name="is_leader" value="1" />
+                Ketua Panitia
+              </label>
+
+              <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors whitespace-nowrap"
+              >
+                Tambah
+              </button>
+            </div>
+          </form>
+
+          <div class="px-6 pb-6">
+            <div class="border-t border-border pt-4">
+              <p class="text-sm font-medium mb-1">Atau import banyak panitia sekaligus dari file</p>
+              <p class="text-xs text-muted-foreground mb-3">
+                Format file Excel (.xlsx) atau CSV dengan kolom <strong>Nama</strong> dan <strong>Peran</strong> (kolom <strong>Ketua</strong> opsional, isi "Ya" untuk ketua panitia).
+              </p>
+
+              <form
+                action="/admin/events/<%= event.id %>/panitia/import"
+                method="POST"
+                enctype="multipart/form-data"
+                class="flex flex-col md:flex-row gap-3"
+              >
+                <input
+                  type="file"
+                  name="file"
+                  accept=".xlsx,.xls,.csv"
+                  required
+                  class="flex-1 h-10 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs"
+                />
+
+                <button
+                  type="submit"
+                  class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors whitespace-nowrap"
+                >
+                  Import dari File
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- FITUR 5: Lihat detail data panitia -->
+        <div data-slot="card" class="rounded-xl border border-border bg-card text-card-foreground shadow-md overflow-hidden">
+          <div class="p-6 border-b border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold tracking-tight">Daftar Panitia</h2>
+              <p class="text-sm text-muted-foreground mt-1">
+                <%= members.length %> anggota panitia terdaftar pada event ini.
+              </p>
+            </div>
+
+            <!-- FITUR 6: Export panitia -->
+            <div class="flex flex-wrap gap-2">
+              <a
+                href="/admin/panitia/export/<%= event.id %>"
+                class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Export Excel
+              </a>
+
+              <a
+                href="/admin/panitia/export/<%= event.id %>/pdf"
+                class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Export PDF
+              </a>
+
+              <a
+                href="/admin/panitia/export/<%= event.id %>/docx"
+                class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Export DOCX
+              </a>
+            </div>
+          </div>
+
+          <% if (members.length > 0) { %>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-border bg-muted/50">
+                  <tr>
+                    <th class="text-left font-semibold px-4 py-3">No</th>
+                    <th class="text-left font-semibold px-4 py-3">Nama</th>
+                    <th class="text-left font-semibold px-4 py-3">Peran</th>
+                    <th class="text-left font-semibold px-4 py-3">Ketua</th>
+                    <th class="text-left font-semibold px-4 py-3">Aksi</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <% members.forEach((m, index) => { %>
+                    <tr class="border-b border-border last:border-0">
+                      <td class="px-4 py-3 text-muted-foreground"><%= index + 1 %></td>
+                      <td class="px-4 py-3" colspan="2">
+                        <form
+                          action="/admin/events/<%= event.id %>/panitia/<%= m.id %>/update"
+                          method="POST"
+                          class="flex items-center gap-2"
+                        >
+                          <input
+                            type="text"
+                            name="name"
+                            value="<%= m.name %>"
+                            placeholder="Nama Panitia"
+                            class="h-8 w-36 rounded-md border border-input bg-transparent px-2 text-xs font-medium"
+                          />
+
+                          <input
+                            type="text"
+                            name="role"
+                            value="<%= m.role %>"
+                            placeholder="Peran"
+                            class="h-8 w-36 rounded-md border border-input bg-transparent px-2 text-xs"
+                          />
+
+                          <label class="flex items-center gap-1 text-xs whitespace-nowrap">
+                            <input type="checkbox" name="is_leader" value="1" <%= m.is_leader ? 'checked' : '' %> />
+                            Ketua
+                          </label>
+
+                          <button
+                            type="submit"
+                            class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-2 hover:bg-accent transition-colors"
+                          >
+                            Simpan
+                          </button>
+                        </form>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <% if (m.is_leader) { %>
+                          <span class="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                            Ketua
+                          </span>
+                        <% } else { %>
+                          <span class="text-muted-foreground text-xs">-</span>
+                        <% } %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <form
+                          action="/admin/events/<%= event.id %>/panitia/<%= m.id %>/delete"
+                          method="POST"
+                          onsubmit="return confirm('Hapus anggota panitia ini?')"
+                        >
+                          <button
+                            type="submit"
+                            class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+                          >
+                            Hapus
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <h3 class="text-lg font-semibold mb-2">Belum ada panitia</h3>
+              <p class="text-muted-foreground text-sm">
+                Tambahkan anggota panitia menggunakan form di atas.
+              </p>
+            </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

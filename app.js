@@ -90,7 +90,7 @@ app.use('/admin', adminRouter);
 
 // ===== FITUR SITI =====
 
-app.use('/events', eventsRouter);
+app.use('/event', eventRouter);
 
 app.use('/committees', committeesRouter);
 

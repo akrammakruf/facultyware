@@ -1,17 +1,22 @@
 const db = require('../lib/db');
 
+/**
+ * Menampilkan daftar event
+ */
 exports.listEvents = async (req, res) => {
-
-    const [events] =
-        await db.query('SELECT * FROM events');
+    const [events] = await db.query(
+        'SELECT * FROM events ORDER BY id DESC'
+    );
 
     res.render('admin/events/index', {
         events
     });
 };
 
+/**
+ * Menambah event baru
+ */
 exports.addEvent = async (req, res) => {
-
     const {
         title,
         description,
@@ -47,8 +52,10 @@ exports.addEvent = async (req, res) => {
     res.redirect('/admin/events');
 };
 
+/**
+ * Update event
+ */
 exports.updateEvent = async (req, res) => {
-
     const {
         title,
         description,
@@ -58,12 +65,12 @@ exports.updateEvent = async (req, res) => {
 
     await db.query(
         `UPDATE events
-        SET
-        title=?,
-        description=?,
-        venue=?,
-        quota=?
-        WHERE id=?`,
+         SET
+            title = ?,
+            description = ?,
+            venue = ?,
+            quota = ?
+         WHERE id = ?`,
         [
             title,
             description,
@@ -76,12 +83,26 @@ exports.updateEvent = async (req, res) => {
     res.redirect('/admin/events');
 };
 
+/**
+ * Publish event
+ */
 exports.publishEvent = async (req, res) => {
-
     await db.query(
         `UPDATE events
-         SET status='published'
-         WHERE id=?`,
+         SET status = 'published'
+         WHERE id = ?`,
+        [req.params.id]
+    );
+
+    res.redirect('/admin/events');
+};
+
+/**
+ * Hapus event
+ */
+exports.deleteEvent = async (req, res) => {
+    await db.query(
+        'DELETE FROM events WHERE id = ?',
         [req.params.id]
     );
 

@@ -1,0 +1,210 @@
+<%
+  const safeEvents = typeof events !== "undefined" && Array.isArray(events) ? events : [];
+
+  const getEventName = (event) => {
+    return event.name || event.title || event.event_name || event.nama_event || "-";
+  };
+
+  const getStatus = (event) => {
+    return event.status || "draft";
+  };
+
+  const formatStatus = (status) => {
+    const value = String(status || "").toLowerCase();
+
+    if (value === "1" || value === "true" || value === "published" || value === "aktif") {
+      return "Published";
+    }
+
+    if (value === "0" || value === "false" || value === "draft" || value === "pending") {
+      return "Draft";
+    }
+
+    return status || "Draft";
+  };
+
+  const isPublished = (status) => {
+    const value = String(status || "").toLowerCase();
+    return value === "1" || value === "true" || value === "published" || value === "aktif";
+  };
+%>
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Kelola Panitia - Facultyware</title>
+
+    <link rel="stylesheet" href="/assets/styles.css" />
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <script>
+      (() => {
+        try {
+          if (
+            localStorage.getItem("themeMode") === "dark" ||
+            (!localStorage.getItem("themeMode") &&
+              matchMedia("(prefers-color-scheme: dark)").matches)
+          ) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (_) {}
+      })();
+    </script>
+
+    <script>
+      (function () {
+        try {
+          const storedTheme = localStorage.getItem("themeVariant");
+          if (storedTheme) {
+            document.documentElement.classList.add(`theme-${storedTheme}`);
+          }
+        } catch (event) {
+          console.error("Could not apply theme variant", event);
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="bg-background text-foreground antialiased p-6 md:p-10">
+    <div class="max-w-6xl mx-auto space-y-6">
+      <header class="flex justify-between items-center pb-6 border-b border-border">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-xl tracking-tight">Facultyware</span>
+          <span class="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Admin Event</span>
+        </div>
+
+        <nav class="flex gap-4 items-center">
+          <a href="/home" class="text-sm font-medium hover:underline">Dashboard</a>
+          <a href="/admin/events" class="text-sm font-medium hover:underline">Manajemen Event</a>
+          <a href="/logout" class="text-sm font-medium hover:underline">Logout</a>
+        </nav>
+      </header>
+
+      <main class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Kelola Panitia</h1>
+            <p class="text-muted-foreground text-sm mt-2">
+              Pilih event di bawah untuk menambahkan, melihat, atau mengekspor data panitia.
+            </p>
+          </div>
+
+          <span class="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full w-fit">
+            <%= safeEvents.length %> Event Tercatat
+          </span>
+        </div>
+
+        <div data-slot="card" class="rounded-xl border border-border bg-card text-card-foreground shadow-md overflow-hidden">
+          <div class="p-6 border-b border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold tracking-tight">Pilih Event</h2>
+              <p class="text-sm text-muted-foreground mt-1">
+                Klik "Kelola Panitia" pada event yang diinginkan.
+              </p>
+            </div>
+
+            <input
+              type="text"
+              id="eventSearch"
+              placeholder="Cari event..."
+              class="w-full sm:w-72 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+
+          <% if (safeEvents.length > 0) { %>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-border bg-muted/50">
+                  <tr>
+                    <th class="text-left font-semibold px-4 py-3">No</th>
+                    <th class="text-left font-semibold px-4 py-3">Nama Event</th>
+                    <th class="text-left font-semibold px-4 py-3">Status</th>
+                    <th class="text-left font-semibold px-4 py-3">Jumlah Panitia</th>
+                    <th class="text-left font-semibold px-4 py-3">Aksi</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <% safeEvents.forEach((e, index) => { %>
+                    <tr class="border-b border-border last:border-0 event-row">
+                      <td class="px-4 py-3 text-muted-foreground">
+                        <%= index + 1 %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <div class="font-medium"><%= getEventName(e) %></div>
+                        <div class="text-xs text-muted-foreground mt-0.5">
+                          Event ID: <%= e.id %>
+                        </div>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <% if (isPublished(getStatus(e))) { %>
+                          <span class="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                            <%= formatStatus(getStatus(e)) %>
+                          </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700">
+                            <%= formatStatus(getStatus(e)) %>
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold">
+                          <%= e.total_panitia || 0 %> orang
+                        </span>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <a
+                          href="/admin/events/<%= e.id %>/panitia"
+                          class="inline-flex items-center justify-center rounded-md text-xs font-medium bg-primary text-primary-foreground h-8 px-3 hover:bg-primary/90 transition-colors"
+                        >
+                          Kelola Panitia
+                        </a>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <h3 class="text-lg font-semibold mb-2">Belum ada event</h3>
+              <p class="text-muted-foreground text-sm mb-4">
+                Tambahkan event terlebih dahulu sebelum mengelola panitia.
+              </p>
+              <a
+                href="/admin/events#tambah-event"
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors"
+              >
+                Tambah Event
+              </a>
+            </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const searchInput = document.getElementById("eventSearch");
+      const rows = document.querySelectorAll(".event-row");
+
+      if (searchInput) {
+        searchInput.addEventListener("input", function () {
+          const keyword = this.value.toLowerCase().trim();
+
+          rows.forEach((row) => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(keyword) ? "" : "none";
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

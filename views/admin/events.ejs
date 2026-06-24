@@ -1,0 +1,301 @@
+<%
+  const safeEvents = typeof events !== "undefined" && Array.isArray(events) ? events : [];
+
+  const getEventName = (event) => {
+    return event.name || event.title || event.event_name || event.nama_event || "-";
+  };
+
+  const getStatus = (event) => {
+    return event.status || "draft";
+  };
+
+  const formatStatus = (status) => {
+    const value = String(status || "").toLowerCase();
+
+    if (value === "1" || value === "true" || value === "published" || value === "aktif") {
+      return "Published";
+    }
+
+    if (value === "0" || value === "false" || value === "draft" || value === "pending") {
+      return "Draft";
+    }
+
+    return status || "Draft";
+  };
+
+  const isPublished = (status) => {
+    const value = String(status || "").toLowerCase();
+    return value === "1" || value === "true" || value === "published" || value === "aktif";
+  };
+%>
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Manajemen Event - Facultyware</title>
+
+    <link rel="stylesheet" href="/assets/styles.css" />
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <script>
+      (() => {
+        try {
+          if (
+            localStorage.getItem("themeMode") === "dark" ||
+            (!localStorage.getItem("themeMode") &&
+              matchMedia("(prefers-color-scheme: dark)").matches)
+          ) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (_) {}
+      })();
+    </script>
+
+    <script>
+      (function () {
+        try {
+          const storedTheme = localStorage.getItem("themeVariant");
+          if (storedTheme) {
+            document.documentElement.classList.add(`theme-${storedTheme}`);
+          }
+        } catch (event) {
+          console.error("Could not apply theme variant", event);
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="bg-background text-foreground antialiased p-6 md:p-10">
+    <div class="max-w-6xl mx-auto space-y-6">
+      <header class="flex justify-between items-center pb-6 border-b border-border">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-xl tracking-tight">Facultyware</span>
+          <span class="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Admin Event</span>
+        </div>
+
+        <nav class="flex gap-4 items-center">
+          <a href="/home" class="text-sm font-medium hover:underline">Dashboard</a>
+          <a href="/events" class="text-sm font-medium hover:underline">Event</a>
+          <a href="/registrations" class="text-sm font-medium hover:underline">Registrasi</a>
+          <a href="/logout" class="text-sm font-medium hover:underline">Logout</a>
+        </nav>
+      </header>
+
+      <main class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Manajemen Event</h1>
+            <p class="text-muted-foreground text-sm mt-2">
+              Tambah event baru, publikasikan event, atau hapus event yang tidak digunakan.
+            </p>
+          </div>
+
+          <span class="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full w-fit">
+            <%= safeEvents.length %> Event Tercatat
+          </span>
+        </div>
+
+        <% if (typeof success !== "undefined" && success) { %>
+          <div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <%= success %>
+          </div>
+        <% } %>
+
+        <% if (typeof error !== "undefined" && error) { %>
+          <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <%= error %>
+          </div>
+        <% } %>
+
+        <div id="tambah-event" data-slot="card" class="rounded-xl border border-border bg-card text-card-foreground shadow-md">
+          <div class="p-6 border-b border-border">
+            <h2 class="text-xl font-bold tracking-tight">Tambah Event</h2>
+            <p class="text-sm text-muted-foreground mt-1">
+              Masukkan nama event yang akan ditambahkan ke sistem.
+            </p>
+          </div>
+
+          <form action="/admin/events/add" method="POST" class="p-6" id="addEventForm">
+            <div class="flex flex-col md:flex-row gap-3">
+              <input
+                type="text"
+                id="eventNameInput"
+                name="name"
+                placeholder="Nama Event"
+                required
+                class="flex-1 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+
+              <input type="hidden" id="eventTitleInput" name="title" />
+              <input type="hidden" id="eventNameAliasInput" name="event_name" />
+              <input type="hidden" id="namaEventInput" name="nama_event" />
+
+              <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-10 px-4 py-2 hover:bg-primary/90 transition-colors"
+              >
+                Tambah Event
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div id="daftar-event" data-slot="card" class="rounded-xl border border-border bg-card text-card-foreground shadow-md overflow-hidden">
+          <div class="p-6 border-b border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold tracking-tight">Daftar Event</h2>
+              <p class="text-sm text-muted-foreground mt-1">
+                Event yang sudah dibuat dapat dipublikasikan atau dihapus dari tabel ini.
+              </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-3 md:items-center">
+              <input
+                type="text"
+                id="eventSearch"
+                placeholder="Cari event..."
+                class="w-full sm:w-72 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+
+              <span class="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full whitespace-nowrap">
+                <%= safeEvents.length %> Event
+              </span>
+            </div>
+          </div>
+
+          <% if (safeEvents.length > 0) { %>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-border bg-muted/50">
+                  <tr>
+                    <th class="text-left font-semibold px-4 py-3">No</th>
+                    <th class="text-left font-semibold px-4 py-3">Nama Event</th>
+                    <th class="text-left font-semibold px-4 py-3">Status</th>
+                    <th class="text-left font-semibold px-4 py-3">Aksi</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <% safeEvents.forEach((e, index) => { %>
+                    <tr class="border-b border-border last:border-0 event-row">
+                      <td class="px-4 py-3 text-muted-foreground">
+                        <%= index + 1 %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <div class="font-medium"><%= getEventName(e) %></div>
+
+                        <% if (e.id) { %>
+                          <div class="text-xs text-muted-foreground mt-0.5">
+                            Event ID: <%= e.id %>
+                          </div>
+                        <% } %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <% if (isPublished(getStatus(e))) { %>
+                          <span class="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                            <%= formatStatus(getStatus(e)) %>
+                          </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700">
+                            <%= formatStatus(getStatus(e)) %>
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <div class="flex flex-wrap gap-2">
+                          <a
+                            href="/admin/events/<%= e.id %>/edit"
+                            class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+                          >
+                            Edit
+                          </a>
+
+                          <a
+                            href="/admin/events/<%= e.id %>/panitia"
+                            class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+                          >
+                            Kelola Panitia
+                          </a>
+
+                          <form action="/admin/events/publish/<%= e.id %>" method="POST">
+                            <button
+                              type="submit"
+                              class="inline-flex items-center justify-center rounded-md text-xs font-medium bg-primary text-primary-foreground h-8 px-3 hover:bg-primary/90 transition-colors"
+                            >
+                              Publikasi
+                            </button>
+                          </form>
+
+                          <form
+                            action="/admin/events/delete/<%= e.id %>"
+                            method="POST"
+                            onsubmit="return confirm('Yakin ingin menghapus event ini?')"
+                          >
+                            <button
+                              type="submit"
+                              class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-border bg-background h-8 px-3 hover:bg-accent transition-colors"
+                            >
+                              Hapus
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <h3 class="text-lg font-semibold mb-2">Belum ada event</h3>
+              <p class="text-muted-foreground text-sm">
+                Event yang ditambahkan akan tampil di sini.
+              </p>
+            </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const addEventForm = document.getElementById("addEventForm");
+      const eventNameInput = document.getElementById("eventNameInput");
+      const eventTitleInput = document.getElementById("eventTitleInput");
+      const eventNameAliasInput = document.getElementById("eventNameAliasInput");
+      const namaEventInput = document.getElementById("namaEventInput");
+
+      if (addEventForm && eventNameInput) {
+        addEventForm.addEventListener("submit", function () {
+          const value = eventNameInput.value.trim();
+
+          eventNameInput.value = value;
+
+          if (eventTitleInput) eventTitleInput.value = value;
+          if (eventNameAliasInput) eventNameAliasInput.value = value;
+          if (namaEventInput) namaEventInput.value = value;
+        });
+      }
+
+      const searchInput = document.getElementById("eventSearch");
+      const rows = document.querySelectorAll(".event-row");
+
+      if (searchInput) {
+        searchInput.addEventListener("input", function () {
+          const keyword = this.value.toLowerCase().trim();
+
+          rows.forEach((row) => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(keyword) ? "" : "none";
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
