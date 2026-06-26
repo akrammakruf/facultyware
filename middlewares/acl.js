@@ -31,11 +31,14 @@ const checkPermission = (requiredPermission) => {
         return next();
       }
 
-      if (
-        Array.isArray(userPermissions) &&
-        userPermissions.includes(requiredPermission)
-      ) {
-        return next();
+      if (Array.isArray(userPermissions)) {
+        if (Array.isArray(requiredPermission)) {
+          if (requiredPermission.some(p => userPermissions.includes(p))) {
+            return next();
+          }
+        } else if (userPermissions.includes(requiredPermission)) {
+          return next();
+        }
       }
 
       return res.status(403).render("error", {

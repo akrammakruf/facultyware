@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const ticketsController = require('../controllers/ticketsController');
-const { isAuthenticated } = require('../middlewares/auth');
+const { checkPermission } = require('../middlewares/acl');
 
 // Lihat tiket (Harus login)
-router.get('/:ticketNumber', isAuthenticated, ticketsController.show);
+router.get('/:ticketNumber', checkPermission(['view_tickets', 'view_own_tickets']), ticketsController.show);
 
 // Download tiket (Harus login)
-router.get('/:ticketNumber/download', isAuthenticated, ticketsController.download);
+router.get('/:ticketNumber/download', checkPermission(['view_tickets', 'download_own_tickets']), ticketsController.download);
 
 module.exports = router;

@@ -95,6 +95,35 @@ const login = async (req, res, next) => {
     req.session.employeeId = user.employee_id || null;
     req.session.employee_id = user.employee_id || null;
 
+    // Ambil role user dari database
+    const [roleRows] = await db.query(
+      `SELECT r.name 
+       FROM roles r
+       JOIN model_has_roles mhr ON mhr.role_id = r.id
+       WHERE mhr.model_id = ? AND mhr.model_type = 'App\\Models\\User'`,
+      [user.id]
+    );
+    const userRole = roleRows.length > 0 ? roleRows[0].name : 'peserta';
+
+    // Ambil permissions user dari database (termasuk dari role & direct)
+    const [permRows] = await db.query(
+      `SELECT p.name 
+       FROM permissions p
+       JOIN role_has_permissions rhp ON rhp.permission_id = p.id
+       JOIN model_has_roles mhr ON mhr.role_id = rhp.role_id
+       WHERE mhr.model_id = ? AND mhr.model_type = 'App\\Models\\User'
+       UNION
+       SELECT p.name 
+       FROM permissions p
+       JOIN model_has_permissions mhp ON mhp.permission_id = p.id
+       WHERE mhp.model_id = ? AND mhp.model_type = 'App\\Models\\User'`,
+      [user.id, user.id]
+    );
+    const userPermissions = permRows.map(r => r.name);
+
+    req.session.role = userRole;
+    req.session.permissions = userPermissions;
+
     req.session.user = {
       id: user.id,
       userId: user.id,
@@ -104,15 +133,8 @@ const login = async (req, res, next) => {
       email: user.email,
       employeeId: user.employee_id || null,
       employee_id: user.employee_id || null,
-      role: "admin",
-      permissions: [
-        "manage_events",
-        "manage_users",
-        "manage_committee",
-        "manage_certificates",
-        "manage_reports",
-        "manage_attendance",
-      ],
+      role: userRole,
+      permissions: userPermissions,
     };
 
     return req.session.save((err) => {

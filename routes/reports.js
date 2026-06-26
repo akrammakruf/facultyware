@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const reportsController = require("../controllers/reportsController");
 const { uploadReport } = require("../middlewares/upload");
-const { isAuthenticated } = require("../middlewares/auth");
+const { checkPermission } = require("../middlewares/acl");
 
-router.get("/", isAuthenticated, reportsController.index);
-router.get("/upload", isAuthenticated, reportsController.uploadPage);
-router.post("/upload", isAuthenticated, uploadReport.single("report_file"), reportsController.store);
+router.get("/", checkPermission(['manage_reports', 'view_reports']), reportsController.index);
+router.get("/upload", checkPermission('manage_reports'), reportsController.uploadPage);
+router.post("/upload", checkPermission('manage_reports'), uploadReport.single("report_file"), reportsController.store);
 
 module.exports = router;

@@ -2,10 +2,10 @@ var express = require('express');
 var router = express.Router();
 
 const remindersController = require('../controllers/remindersController');
-const { isAuthenticated } = require('../middlewares/auth');
+const { checkPermission } = require('../middlewares/acl');
 
-router.get('/', isAuthenticated, remindersController.index);
-router.post('/send', isAuthenticated, remindersController.send);
-router.get('/history', isAuthenticated, remindersController.history);
+router.get('/', checkPermission('manage_reminders'), remindersController.index);
+router.post('/send', checkPermission('manage_reminders'), remindersController.send);
+router.get('/history', checkPermission('manage_reminders'), remindersController.history);
 
 module.exports = router;

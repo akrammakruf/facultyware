@@ -204,194 +204,121 @@
       </a>
     </header>
 
+    <%
+      const hasAccess = (requiredPermission) => {
+        if (role === 'admin') return true;
+        if (!requiredPermission) return true;
+        if (Array.isArray(requiredPermission)) {
+          return requiredPermission.some(p => permissions.includes(p));
+        }
+        return permissions.includes(requiredPermission);
+      };
+
+      const renderSidebarLink = (href, text, requiredPermission) => {
+        const isAllowed = hasAccess(requiredPermission);
+        const isPesertaRole = role === 'peserta';
+
+        if (isAllowed) {
+    %>
+          <li>
+            <a href="<%= href %>">
+              <span><%= text %></span>
+            </a>
+          </li>
+    <%
+        } else {
+          if (!isPesertaRole) {
+    %>
+            <li class="restricted" style="opacity: 0.55; cursor: not-allowed; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; pointer-events: none; width: 100%;">
+              <span style="color: #94a3b8;"><%= text %></span>
+              <span style="font-size: 8px; font-weight: 700; padding: 1px 4.5px; background: #fee2e2; color: #ef4444; border-radius: 3px; border: 1px solid #fca5a5;">Locked</span>
+            </li>
+    <%
+          }
+        }
+      };
+
+      const hasSectionAccess = (requiredPermissions) => {
+        if (role === 'admin') return true;
+        if (role !== 'peserta') return true; // panitia sees locked items anyway
+        return requiredPermissions.some(p => hasAccess(p));
+      };
+    %>
+
     <section class="scrollbar">
-      <div role="group">
-        <h3>Dashboard</h3>
-        <ul>
-          <li>
-            <a href="/home">
-              <span>Dashboard Utama</span>
-            </a>
-          </li>
-        </ul>
-      </div>
+      <% if (hasSectionAccess(['view_dashboard'])) { %>
+        <div role="group">
+          <h3>Dashboard</h3>
+          <ul>
+            <% renderSidebarLink('/home', 'Dashboard Utama', 'view_dashboard') %>
+          </ul>
+        </div>
+      <% } %>
 
-      <div role="group">
-        <h3>Event & Panitia</h3>
-        <ul>
-          <li>
-            <a href="/admin/events">
-              <span>Manajemen Event</span>
-            </a>
-          </li>
+      <% if (hasSectionAccess(['manage_events', 'manage_committee'])) { %>
+        <div role="group">
+          <h3>Event & Panitia</h3>
+          <ul>
+            <% renderSidebarLink('/admin/events', 'Manajemen Event', 'manage_events') %>
+            <% renderSidebarLink('/admin/events', 'Tambah Event', 'manage_events') %>
+            <% renderSidebarLink('/admin/events', 'Publish Event', 'manage_events') %>
+            <% renderSidebarLink('/admin/events', 'Kelola Panitia', 'manage_committee') %>
+            <% renderSidebarLink('/admin/events', 'Export Panitia', 'manage_committee') %>
+          </ul>
+        </div>
+      <% } %>
 
-          <li>
-            <a href="/admin/events">
-              <span>Tambah Event</span>
-            </a>
-          </li>
+      <% if (hasSectionAccess(['view_events', 'register_events', 'view_registrations', 'view_own_tickets', 'view_tickets'])) { %>
+        <div role="group">
+          <h3>Registrasi & Tiket</h3>
+          <ul>
+            <% renderSidebarLink('/events', 'Daftar Event', 'view_events') %>
+            <% renderSidebarLink('/registrations', 'Registrasi Peserta', 'register_events') %>
+            <% renderSidebarLink('/registrations', 'Detail Registrasi', ['view_registrations', 'view_own_tickets']) %>
+            <% renderSidebarLink('/registrations', 'Akses E-Ticket', ['view_tickets', 'view_own_tickets']) %>
+            <% renderSidebarLink('/registrations', 'Detail Tiket Peserta', ['view_tickets', 'view_own_tickets']) %>
+          </ul>
+        </div>
+      <% } %>
 
-          <li>
-            <a href="/admin/events">
-              <span>Publish Event</span>
-            </a>
-          </li>
+      <% if (hasSectionAccess(['manage_reminders', 'checkin_participants', 'view_attendance', 'export_attendance'])) { %>
+        <div role="group">
+          <h3>Reminder & Attendance</h3>
+          <ul>
+            <% renderSidebarLink('/reminders', 'Kirim Reminder', 'manage_reminders') %>
+            <% renderSidebarLink('/reminders/history', 'Riwayat Reminder', 'manage_reminders') %>
+            <% renderSidebarLink('/checkins', 'Verifikasi Tiket', 'checkin_participants') %>
+            <% renderSidebarLink('/checkins', 'Check-in Peserta', 'checkin_participants') %>
+            <% renderSidebarLink('/attendances', 'Attendance List', 'view_attendance') %>
+            <% renderSidebarLink('/attendances/recap', 'Rekap Attendance', 'view_attendance') %>
+            <% renderSidebarLink('/attendances/export/excel', 'Export Attendance Excel', 'export_attendance') %>
+          </ul>
+        </div>
+      <% } %>
 
-          <li>
-            <a href="/admin/events">
-              <span>Kelola Panitia</span>
-            </a>
-          </li>
+      <% if (hasSectionAccess(['manage_participants', 'view_participants', 'manage_certificates', 'view_certificates', 'view_own_certificates', 'preview_own_certificates'])) { %>
+        <div role="group">
+          <h3>Peserta & Sertifikat</h3>
+          <ul>
+            <% renderSidebarLink('/participants', 'Data Peserta', ['manage_participants', 'view_participants']) %>
+            <% renderSidebarLink('/participants', 'Detail Peserta', ['manage_participants', 'view_participants']) %>
+            <% renderSidebarLink('/certificates', 'Data Sertifikat', ['manage_certificates', 'view_certificates', 'view_own_certificates']) %>
+            <% renderSidebarLink('/certificates', 'Eligible Sertifikat', ['manage_certificates', 'view_certificates']) %>
+            <% renderSidebarLink('/certificates', 'Lihat Sertifikat', ['manage_certificates', 'view_certificates', 'preview_own_certificates']) %>
+          </ul>
+        </div>
+      <% } %>
 
-          <li>
-            <a href="/admin/events">
-              <span>Export Panitia</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div role="group">
-        <h3>Registrasi & Tiket</h3>
-        <ul>
-          <li>
-            <a href="/events">
-              <span>Daftar Event</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/registrations">
-              <span>Registrasi Peserta</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/registrations">
-              <span>Detail Registrasi</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/registrations">
-              <span>Akses E-Ticket</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/registrations">
-              <span>Detail Tiket Peserta</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div role="group">
-        <h3>Reminder & Attendance</h3>
-        <ul>
-          <li>
-            <a href="/reminders">
-              <span>Kirim Reminder</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/reminders/history">
-              <span>Riwayat Reminder</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/checkins">
-              <span>Verifikasi Tiket</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/checkins">
-              <span>Check-in Peserta</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/attendances">
-              <span>Attendance List</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/attendances/recap">
-              <span>Rekap Attendance</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/attendances/export/excel">
-              <span>Export Attendance Excel</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div role="group">
-        <h3>Peserta & Sertifikat</h3>
-        <ul>
-          <li>
-            <a href="/participants">
-              <span>Data Peserta</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/participants">
-              <span>Detail Peserta</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/certificates">
-              <span>Data Sertifikat</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/certificates">
-              <span>Eligible Sertifikat</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/certificates">
-              <span>Lihat Sertifikat</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div role="group">
-        <h3>Laporan & Dokumen</h3>
-        <ul>
-          <li>
-            <a href="/reports">
-              <span>Laporan Event</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/reports/upload">
-              <span>Upload Laporan</span>
-            </a>
-          </li>
-
-          <li>
-            <a href="/reports">
-              <span>Dokumen Event</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      
+      <% if (hasSectionAccess(['manage_reports', 'view_reports'])) { %>
+        <div role="group">
+          <h3>Laporan & Dokumen</h3>
+          <ul>
+            <% renderSidebarLink('/reports', 'Laporan Event', ['manage_reports', 'view_reports']) %>
+            <% renderSidebarLink('/reports/upload', 'Upload Laporan', 'manage_reports') %>
+            <% renderSidebarLink('/reports', 'Dokumen Event', ['manage_reports', 'view_reports']) %>
+          </ul>
+        </div>
+      <% } %>
     </section>
 
     <footer>

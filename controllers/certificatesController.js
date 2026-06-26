@@ -2,8 +2,7 @@ const db = require("../lib/db");
 
 const index = async (req, res, next) => {
   try {
-    const [participants] = await db.query(
-      `
+    let query = `
       SELECT
         er.id,
         er.registration_number,
@@ -20,10 +19,18 @@ const index = async (req, res, next) => {
       JOIN users u ON er.user_id = u.id
       JOIN events e ON er.event_id = e.id
       LEFT JOIN event_attendances ea ON ea.event_registration_id = er.id
-      WHERE er.attendance_status = 'attended' OR ea.status = 'present'
-      ORDER BY e.start_date DESC
-      `
-    );
+      WHERE (er.attendance_status = 'attended' OR ea.status = 'present')
+    `;
+    const queryParams = [];
+
+    if (req.session.role === 'peserta') {
+      query += ` AND er.user_id = ?`;
+      queryParams.push(req.session.userId);
+    }
+
+    query += ` ORDER BY e.start_date DESC`;
+
+    const [participants] = await db.query(query, queryParams);
 
     res.render("certificates/index", {
       title: "Sertifikat Peserta",
@@ -42,6 +49,7 @@ const show = async (req, res, next) => {
       `
       SELECT
         er.id,
+        er.user_id,
         er.registration_number,
         er.ticket_number,
         er.attendance_status,
@@ -72,6 +80,14 @@ const show = async (req, res, next) => {
     }
 
     const participant = rows[0];
+
+    // Enforce owner-only check for Peserta
+    if (req.session.role === 'peserta' && participant.user_id !== req.session.userId) {
+      return res.status(403).render("error", {
+        message: "Anda tidak memiliki akses ke sertifikat ini.",
+        error: { status: 403, stack: "" },
+      });
+    }
 
     const isEligible =
       participant.attendance_status === "attended" ||

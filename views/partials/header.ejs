@@ -515,280 +515,106 @@
       </div>
 
       <nav class="sidebar-menu">
+        <%
+          const hasAccess = (requiredPermission) => {
+            if (role === 'admin') return true;
+            if (!requiredPermission) return true;
+            if (Array.isArray(requiredPermission)) {
+              return requiredPermission.some(p => permissions.includes(p));
+            }
+            return permissions.includes(requiredPermission);
+          };
+
+          const renderSidebarLink = (href, icon, text, note, route, requiredPermission) => {
+            const isAllowed = hasAccess(requiredPermission);
+            const isPesertaRole = role === 'peserta';
+
+            if (isAllowed) {
+        %>
+              <a href="<%= href %>" class="sidebar-link" data-route="<%= route %>">
+                <span class="sidebar-icon"><%= icon %></span>
+                <span class="sidebar-text">
+                  <%= text %>
+                  <small class="sidebar-note"><%= note %></small>
+                </span>
+              </a>
+        <%
+            } else {
+              if (!isPesertaRole) {
+        %>
+                <div class="sidebar-link restricted" style="opacity: 0.55; cursor: not-allowed; display: flex; align-items: center; justify-content: space-between; width: 100%; pointer-events: none; text-decoration: none;">
+                  <div style="display: flex; align-items: center;">
+                    <span class="sidebar-icon" style="background: #e2e8f0; color: #94a3b8;"><%= icon %></span>
+                    <span class="sidebar-text" style="color: #94a3b8;">
+                      <%= text %>
+                      <small class="sidebar-note" style="color: #cbd5e1;"><%= note %></small>
+                    </span>
+                  </div>
+                  <span style="font-size: 9px; font-weight: 700; padding: 2px 5px; background: #fee2e2; color: #ef4444; border-radius: 4px; border: 1px solid #fca5a5;">Locked</span>
+                </div>
+        <%
+              }
+            }
+          };
+        %>
+
         <div class="sidebar-section">
           <div class="sidebar-section-title">Main Menu</div>
-
-          <a href="/home" class="sidebar-link" data-route="/home">
-            <span class="sidebar-icon">DB</span>
-            <span class="sidebar-text">
-              Dashboard
-              <small class="sidebar-note">Ringkasan sistem</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/home', 'DB', 'Dashboard', 'Ringkasan sistem', '/home', 'view_dashboard') %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">Siti - Event & Panitia</div>
-
-          <a href="/admin/events" class="sidebar-link" data-route="/admin/events">
-            <span class="sidebar-icon">EV</span>
-            <span class="sidebar-text">
-              Manajemen Event
-              <small class="sidebar-note">Tambah dan kelola event</small>
-            </span>
-          </a>
-
-          <a href="/admin/events" class="sidebar-link" data-route="/admin/events/publish">
-            <span class="sidebar-icon">PB</span>
-            <span class="sidebar-text">
-              Publish Event
-              <small class="sidebar-note">Publikasi event</small>
-            </span>
-          </a>
-
-          <a href="/admin/events" class="sidebar-link" data-route="/admin/api/committee">
-            <span class="sidebar-icon">PN</span>
-            <span class="sidebar-text">
-              Panitia Event
-              <small class="sidebar-note">Kelola panitia per event</small>
-            </span>
-          </a>
-
-          <a href="/admin/events" class="sidebar-link" data-route="/admin/panitia/export">
-            <span class="sidebar-icon">EP</span>
-            <span class="sidebar-text">
-              Export Panitia
-              <small class="sidebar-note">Export data panitia</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/admin/events', 'EV', 'Manajemen Event', 'Tambah dan kelola event', '/admin/events', 'manage_events') %>
+          <% renderSidebarLink('/admin/events', 'PB', 'Publish Event', 'Publikasi event', '/admin/events/publish', 'manage_events') %>
+          <% renderSidebarLink('/admin/events', 'PN', 'Panitia Event', 'Kelola panitia per event', '/admin/api/committee', 'manage_committee') %>
+          <% renderSidebarLink('/admin/events', 'EP', 'Export Panitia', 'Export data panitia', '/admin/panitia/export', 'manage_committee') %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">Ghufran - Registrasi & Tiket</div>
-
-          <a href="/events" class="sidebar-link" data-route="/events">
-            <span class="sidebar-icon">EL</span>
-            <span class="sidebar-text">
-              Daftar Event
-              <small class="sidebar-note">Event untuk peserta</small>
-            </span>
-          </a>
-
-          <a href="/registrations" class="sidebar-link" data-route="/registrations">
-            <span class="sidebar-icon">RG</span>
-            <span class="sidebar-text">
-              Registrasi Peserta
-              <small class="sidebar-note">Pendaftaran event</small>
-            </span>
-          </a>
-
-          <a href="/registrations" class="sidebar-link" data-route="/registrations/detail">
-            <span class="sidebar-icon">DR</span>
-            <span class="sidebar-text">
-              Detail Registrasi
-              <small class="sidebar-note">Detail data registrasi</small>
-            </span>
-          </a>
-
-          <a href="/registrations" class="sidebar-link" data-route="/tickets">
-            <span class="sidebar-icon">ET</span>
-            <span class="sidebar-text">
-              E-Ticket Peserta
-              <small class="sidebar-note">Akses tiket peserta</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/events', 'EL', 'Daftar Event', 'Event untuk peserta', '/events', 'view_events') %>
+          <% renderSidebarLink('/registrations', 'RG', 'Registrasi Peserta', 'Pendaftaran event', '/registrations', 'register_events') %>
+          <% renderSidebarLink('/registrations', 'DR', 'Detail Registrasi', 'Detail data registrasi', '/registrations/detail', ['view_registrations', 'view_own_tickets']) %>
+          <% renderSidebarLink('/registrations', 'ET', 'E-Ticket Peserta', 'Akses tiket peserta', '/tickets', ['view_tickets', 'view_own_tickets']) %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">Akram - Reminder & Kehadiran</div>
-
-          <a href="/reminders" class="sidebar-link" data-route="/reminders">
-            <span class="sidebar-icon">RM</span>
-            <span class="sidebar-text">
-              Kirim Reminder
-              <small class="sidebar-note">Kirim pengingat event</small>
-            </span>
-          </a>
-
-          <a href="/reminders/history" class="sidebar-link" data-route="/reminders/history">
-            <span class="sidebar-icon">RH</span>
-            <span class="sidebar-text">
-              Riwayat Reminder
-              <small class="sidebar-note">Log pengiriman reminder</small>
-            </span>
-          </a>
-
-          <a href="/checkins" class="sidebar-link" data-route="/checkins">
-            <span class="sidebar-icon">VT</span>
-            <span class="sidebar-text">
-              Verifikasi Tiket
-              <small class="sidebar-note">Validasi tiket peserta</small>
-            </span>
-          </a>
-
-          <a href="/checkins" class="sidebar-link" data-route="/checkins/process">
-            <span class="sidebar-icon">CI</span>
-            <span class="sidebar-text">
-              Check-in Peserta
-              <small class="sidebar-note">Proses kehadiran peserta</small>
-            </span>
-          </a>
-
-          <a href="/attendances" class="sidebar-link" data-route="/attendances">
-            <span class="sidebar-icon">AT</span>
-            <span class="sidebar-text">
-              Data Kehadiran
-              <small class="sidebar-note">Daftar attendance peserta</small>
-            </span>
-          </a>
-
-          <a href="/attendances/recap" class="sidebar-link" data-route="/attendances/recap">
-            <span class="sidebar-icon">RC</span>
-            <span class="sidebar-text">
-              Rekap Attendance
-              <small class="sidebar-note">Ringkasan kehadiran</small>
-            </span>
-          </a>
-
-          <a href="/attendances/export/excel" class="sidebar-link" data-route="/attendances/export/excel">
-            <span class="sidebar-icon">EX</span>
-            <span class="sidebar-text">
-              Export Attendance
-              <small class="sidebar-note">Download Excel attendance</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/reminders', 'RM', 'Kirim Reminder', 'Kirim pengingat event', '/reminders', 'manage_reminders') %>
+          <% renderSidebarLink('/reminders/history', 'RH', 'Riwayat Reminder', 'Log pengiriman reminder', '/reminders/history', 'manage_reminders') %>
+          <% renderSidebarLink('/checkins', 'VT', 'Verifikasi Tiket', 'Validasi tiket peserta', '/checkins', 'checkin_participants') %>
+          <% renderSidebarLink('/checkins', 'CI', 'Check-in Peserta', 'Proses kehadiran peserta', '/checkins/process', 'checkin_participants') %>
+          <% renderSidebarLink('/attendances', 'AT', 'Data Kehadiran', 'Daftar attendance peserta', '/attendances', 'view_attendance') %>
+          <% renderSidebarLink('/attendances/recap', 'RC', 'Rekap Attendance', 'Ringkasan kehadiran', '/attendances/recap', 'view_attendance') %>
+          <% renderSidebarLink('/attendances/export/excel', 'EX', 'Export Attendance', 'Download Excel attendance', '/attendances/export/excel', 'export_attendance') %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">Hana - Peserta & Sertifikat</div>
-
-          <a href="/participants" class="sidebar-link" data-route="/participants">
-            <span class="sidebar-icon">PS</span>
-            <span class="sidebar-text">
-              Data Peserta
-              <small class="sidebar-note">Daftar peserta event</small>
-            </span>
-          </a>
-
-          <a href="/participants" class="sidebar-link" data-route="/participants/detail">
-            <span class="sidebar-icon">DP</span>
-            <span class="sidebar-text">
-              Detail Peserta
-              <small class="sidebar-note">Detail informasi peserta</small>
-            </span>
-          </a>
-
-          <a href="/certificates" class="sidebar-link" data-route="/certificates">
-            <span class="sidebar-icon">CR</span>
-            <span class="sidebar-text">
-              Data Sertifikat
-              <small class="sidebar-note">Kelola sertifikat peserta</small>
-            </span>
-          </a>
-
-          <a href="/certificates" class="sidebar-link" data-route="/certificates/eligible">
-            <span class="sidebar-icon">EC</span>
-            <span class="sidebar-text">
-              Eligible Sertifikat
-              <small class="sidebar-note">Peserta layak sertifikat</small>
-            </span>
-          </a>
-
-          <a href="/certificates" class="sidebar-link" data-route="/certificates/show">
-            <span class="sidebar-icon">LC</span>
-            <span class="sidebar-text">
-              Lihat Sertifikat
-              <small class="sidebar-note">Preview sertifikat</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/participants', 'PS', 'Data Peserta', 'Daftar peserta event', '/participants', ['manage_participants', 'view_participants']) %>
+          <% renderSidebarLink('/participants', 'DP', 'Detail Peserta', 'Detail informasi peserta', '/participants/detail', ['manage_participants', 'view_participants']) %>
+          <% renderSidebarLink('/certificates', 'CR', 'Data Sertifikat', 'Kelola sertifikat peserta', '/certificates', ['manage_certificates', 'view_certificates', 'view_own_certificates']) %>
+          <% renderSidebarLink('/certificates', 'EC', 'Eligible Sertifikat', 'Peserta layak sertifikat', '/certificates/eligible', ['manage_certificates', 'view_certificates']) %>
+          <% renderSidebarLink('/certificates', 'LC', 'Lihat Sertifikat', 'Preview sertifikat', '/certificates/show', ['manage_certificates', 'view_certificates', 'preview_own_certificates']) %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">Hana - Laporan & Dokumen</div>
-
-          <a href="/reports" class="sidebar-link" data-route="/reports">
-            <span class="sidebar-icon">LP</span>
-            <span class="sidebar-text">
-              Laporan Event
-              <small class="sidebar-note">Dokumentasi laporan event</small>
-            </span>
-          </a>
-
-          <a href="/reports/upload" class="sidebar-link" data-route="/reports/upload">
-            <span class="sidebar-icon">UP</span>
-            <span class="sidebar-text">
-              Upload Laporan
-              <small class="sidebar-note">Unggah dokumen laporan</small>
-            </span>
-          </a>
-
-          <a href="/reports" class="sidebar-link" data-route="/event-documents">
-            <span class="sidebar-icon">DL</span>
-            <span class="sidebar-text">
-              Dokumen Event
-              <small class="sidebar-note">Arsip dokumen event</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/reports', 'LP', 'Laporan Event', 'Dokumentasi laporan event', '/reports', ['manage_reports', 'view_reports']) %>
+          <% renderSidebarLink('/reports/upload', 'UP', 'Upload Laporan', 'Unggah dokumen laporan', '/reports/upload', 'manage_reports') %>
+          <% renderSidebarLink('/reports', 'DL', 'Dokumen Event', 'Arsip dokumen event', '/event-documents', ['manage_reports', 'view_reports']) %>
         </div>
 
         <div class="sidebar-section">
           <div class="sidebar-section-title">API Testing</div>
-
-          <a href="/api/akram/reminders" class="sidebar-link" data-route="/api/akram/reminders">
-            <span class="sidebar-icon">AR</span>
-            <span class="sidebar-text">
-              API Reminder
-              <small class="sidebar-note">Endpoint reminder</small>
-            </span>
-          </a>
-
-          <a href="/api/akram/attendances" class="sidebar-link" data-route="/api/akram/attendances">
-            <span class="sidebar-icon">AA</span>
-            <span class="sidebar-text">
-              API Attendance
-              <small class="sidebar-note">Endpoint attendance</small>
-            </span>
-          </a>
-
-          <a href="/api/akram/attendance-recap" class="sidebar-link" data-route="/api/akram/attendance-recap">
-            <span class="sidebar-icon">AC</span>
-            <span class="sidebar-text">
-              API Recap
-              <small class="sidebar-note">Endpoint attendance recap</small>
-            </span>
-          </a>
-
-          <a href="/api/ghufran/events" class="sidebar-link" data-route="/api/ghufran/events">
-            <span class="sidebar-icon">GE</span>
-            <span class="sidebar-text">
-              API Event
-              <small class="sidebar-note">Endpoint Ghufran</small>
-            </span>
-          </a>
-
-          <a href="/api/hana/participants" class="sidebar-link" data-route="/api/hana/participants">
-            <span class="sidebar-icon">HP</span>
-            <span class="sidebar-text">
-              API Participants
-              <small class="sidebar-note">Endpoint peserta</small>
-            </span>
-          </a>
-
-          <a href="/api/hana/certificates" class="sidebar-link" data-route="/api/hana/certificates">
-            <span class="sidebar-icon">HC</span>
-            <span class="sidebar-text">
-              API Certificates
-              <small class="sidebar-note">Endpoint sertifikat</small>
-            </span>
-          </a>
-
-          <a href="/api/hana/reports" class="sidebar-link" data-route="/api/hana/reports">
-            <span class="sidebar-icon">HR</span>
-            <span class="sidebar-text">
-              API Reports
-              <small class="sidebar-note">Endpoint laporan</small>
-            </span>
-          </a>
+          <% renderSidebarLink('/api/akram/reminders', 'AR', 'API Reminder', 'Endpoint reminder', '/api/akram/reminders', 'manage_reminders') %>
+          <% renderSidebarLink('/api/akram/attendances', 'AA', 'API Attendance', 'Endpoint attendance', '/api/akram/attendances', 'manage_reminders') %>
+          <% renderSidebarLink('/api/akram/attendance-recap', 'AC', 'API Recap', 'Endpoint attendance recap', '/api/akram/attendance-recap', 'manage_reminders') %>
+          <% renderSidebarLink('/api/ghufran/events', 'GE', 'API Event', 'Endpoint Ghufran', '/api/ghufran/events', 'manage_events') %>
+          <% renderSidebarLink('/api/hana/participants', 'HP', 'API Participants', 'Endpoint peserta', '/api/hana/participants', 'manage_participants') %>
+          <% renderSidebarLink('/api/hana/certificates', 'HC', 'API Certificates', 'Endpoint sertifikat', '/api/hana/certificates', 'manage_certificates') %>
+          <% renderSidebarLink('/api/hana/reports', 'HR', 'API Reports', 'Endpoint laporan', '/api/hana/reports', 'manage_reports') %>
         </div>
       </nav>
 

@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const participantsController = require("../controllers/participantsController");
-const { isAuthenticated } = require("../middlewares/auth");
+const { checkPermission } = require("../middlewares/acl");
 
-router.get("/", isAuthenticated, participantsController.index);
-router.get("/:id", isAuthenticated, participantsController.detail);
-router.post("/:id/status", isAuthenticated, participantsController.updateStatus);
+router.get("/", checkPermission(['manage_participants', 'view_participants']), participantsController.index);
+router.get("/:id", checkPermission(['manage_participants', 'view_participants']), participantsController.detail);
+router.post("/:id/status", checkPermission('manage_participants'), participantsController.updateStatus);
 
 module.exports = router;

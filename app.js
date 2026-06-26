@@ -45,6 +45,15 @@ const sessionStore = new MySQLStore({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'express_sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
 });
 
 app.use(
@@ -59,6 +68,15 @@ app.use(
     },
   })
 );
+
+// Expose session variables to all views
+app.use((req, res, next) => {
+  res.locals.user = req.session.username || null;
+  res.locals.currentUser = req.session.user || null;
+  res.locals.role = req.session.role || null;
+  res.locals.permissions = req.session.permissions || [];
+  next();
+});
 
 // Main routes
 app.use('/', indexRouter);

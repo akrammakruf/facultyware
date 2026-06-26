@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const registrationsController = require('../controllers/registrationsController');
-const { isAuthenticated } = require('../middlewares/auth');
+const { checkPermission } = require('../middlewares/acl');
 
 // List event yang tersedia
-router.get('/', registrationsController.index);
+router.get('/', checkPermission('view_events'), registrationsController.index);
 
 // Detail event
-router.get('/:id', registrationsController.detail);
+router.get('/:id', checkPermission('view_events'), registrationsController.detail);
 
 // Form pendaftaran (Harus login)
-router.get('/:id/register', isAuthenticated, registrationsController.form);
+router.get('/:id/register', checkPermission('register_events'), registrationsController.form);
 
 // Proses pendaftaran (Harus login)
-router.post('/:id/register', isAuthenticated, registrationsController.store);
+router.post('/:id/register', checkPermission('register_events'), registrationsController.store);
 
 module.exports = router;
